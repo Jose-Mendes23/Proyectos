@@ -1,0 +1,252 @@
+/*
+  PASTILLERO INTELIGENTE 
+  Autor:José Manuel Mendes 25.05.2023
+
+  El "Pastillero inteligente" es un código implementado en la MCU ESP32 que funciona como un recordatorio de toma de pastillas mediante alarmas programadas.
+  Esta versión inicial utiliza 7 alarmas programadas directamente en el IDE de Arduino. Después de establecer la hora de encendido, el código ejecuta la función
+  "Updatetime()" en el "void loop()" para obtener el tiempo del contador en el hardware RTC modelo DS1307. Se recorren los condicionales para verificar qué 
+  alarma cumple con las condiciones establecidas. Cuando se alcanzan la hora y los minutos indicados en una alarma, se enciende un LED correspondiente al 
+  compartimento de la pastilla y se activa una bocina. Al tomar la pastilla, se presiona un botón de interrupción para desactivar todas las alarmas. Luego, 
+  mediante un condicional que revisa la hora, se vuelve a encender el indicador de la alarma correspondiente después de la hora programada para la próxima toma.
+  El hardware utilizado incluye una ESP32, el módulo DS1307, 7 LEDs, resistencias, una fuente de alimentación y los interruptores para las pruebas y el apagado 
+  de cada alarma. Además, se cuenta con un botón de prueba para mostrar el funcionamiento de las 7 alarmas. En la implementación de este código se hizo uso 
+  de la libreria de DS1307 para los MCU de espressif. 
+
+  DS1307ESP Library: https://github.com/3tawi/DS1307ESP
+*/
+
+#include <DS1307ESP.h>
+
+DS1307ESP rtc;
+
+uint32_t lastTime; 
+
+int rst = 15;
+int led_verde = 23;
+int led_rojo = 19;
+int buz = 18;
+int set_rst = 0;
+
+// Definimos los indicadores de activación de las alarmas
+bool AL1 = true;
+bool AL2 = true;
+bool AL3 = true;
+bool AL4 = true;
+bool AL5 = true;
+bool AL6 = true;
+bool AL7 = true;
+
+// Hora de las alarmas recordar que es formato 24h
+int alarma1 = 20;
+int alarma2 = 21;
+int alarma3 = 22;
+int alarma4 = 22;
+int alarma5 = 22;
+int alarma6 = 22;
+int alarma7 = 22;
+
+void IRAM_ATTR isr(){
+
+  Serial.println("INTERRUPCIÓN");         // Se proceden a desactivar todas las alarmas, si la hora de la alarma ya pasó se reactiva para la proxima ronda
+  AL1 = false;
+  AL2 = false;
+  AL3 = false;
+  AL4 = false;
+  AL5 = false;
+  AL6 = false;
+  AL7 = false;
+  digitalWrite(led_verde, HIGH);          //Muestra el inicio de la interrupción
+  digitalWrite(led_rojo, LOW);            // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+  digitalWrite(buz, LOW);                 // Detener la señal de sonido
+}
+
+
+void setup() {
+
+  Serial.begin(115200);
+  pinMode(led_rojo, OUTPUT);
+  pinMode(led_verde, OUTPUT);
+  pinMode(buz, OUTPUT);
+  pinMode(rst, INPUT_PULLDOWN);
+  attachInterrupt(rst, isr, RISING);
+  rtc.begin(); 
+  rtc.SetFont(3);                         //  language 0 = EN  |  1 = FR  |  2 = GR | 3 = ES
+}
+
+
+void loop() {
+
+  if(millis() - lastTime >= 1000) {
+    updateTime();
+    lastTime = millis();
+
+/////////////////////////////////////////////////// ALARMA #1 /////////////////////////////////////////////////////////////
+  if(rtc.hour > alarma1 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL1 = true;
+    Serial.println("Estoy AL1=true\n");
+  }
+  if(AL1 == true){
+    if(rtc.hour == alarma1){
+      if(rtc.minute > 30 ){
+        digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+        digitalWrite(buz,HIGH);
+        Serial.printf("Estoy en el encendido de la Alarma #1, %d:%d\n", rtc.hour, rtc.minute);
+      }
+    }else{
+      digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+      digitalWrite(buz, LOW);                        // Detener la señal de sonido
+      Serial.printf("Estoy en apagado automatico Alarma #1 hour > *%d*\n", rtc.hour);
+    }
+  }else{
+    Serial.println("*Alarma #1 desactivada* se realizo la interrupcion, AL1 = false\n");
+  }
+
+/////////////////////////////////////////////////// ALARMA #2 /////////////////////////////////////////////////////////////
+ 
+    if(rtc.hour > alarma2 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL2 = true;
+    Serial.println("Estoy AL2 = true\n");
+    }
+    if(AL2 == true){
+      if(rtc.hour == alarma2){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #2, %d:%d\n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #2 hour > *%d*\n", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #2 desactivada* se realizo la interrupcion, AL2 = false\n");
+    }
+  
+/////////////////////////////////////////////////// ALARMA #3 /////////////////////////////////////////////////////////////
+
+    if(rtc.hour > alarma3 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL3 = true;
+    Serial.println("Estoy AL3 = true\n");
+    }
+    if(AL3 == true){
+      if(rtc.hour == alarma3){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #3, %d:%d \n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #3 hour > *%d*", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #3 desactivada* se realizo la interrupcion, AL3 = false\n");
+    }
+  
+/////////////////////////////////////////////////// ALARMA #4 /////////////////////////////////////////////////////////////
+
+    if(rtc.hour > alarma4 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL4 = true;
+    Serial.println("Estoy AL4 = true\n");
+    }
+    if(AL4 == true){
+      if(rtc.hour == alarma4){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #4, %d:%d \n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #4 hour > *%d*", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #4 desactivada* se realizo la interrupcion, AL4 = false\n");
+    }
+  
+/////////////////////////////////////////////////// ALARMA #5 /////////////////////////////////////////////////////////////
+
+    if(rtc.hour > alarma5 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL5 = true;
+    Serial.println("Estoy AL5 = true\n");
+    }
+    if(AL5 == true){
+      if(rtc.hour == alarma5){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #5, %d:%d \n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #5 hour > *%d*", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #5 desactivada* se realizo la interrupcion, AL5 = false\n");
+    }
+  
+/////////////////////////////////////////////////// ALARMA #6 /////////////////////////////////////////////////////////////
+
+    if(rtc.hour > alarma6 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL6 = true;
+    Serial.println("Estoy AL6 = true\n");
+    }
+    if(AL6 == true){
+      if(rtc.hour == alarma6){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #6, %d:%d \n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #6 hour > *%d*", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #6 desactivada* se realizo la interrupcion, AL6 = false\n");
+    }
+  
+/////////////////////////////////////////////////// ALARMA #7 /////////////////////////////////////////////////////////////
+
+    if(rtc.hour > alarma7 ){                                   // LAS HORAS SE COLOCAN EN FORMATO DE 24H
+    AL7 = true;
+    Serial.println("Estoy AL7 = true\n");
+    }
+    if(AL7 == true){
+      if(rtc.hour == alarma7){
+        if(rtc.minute > 30 ){
+          digitalWrite(led_rojo, HIGH);                 // Encender el LED estableciendo el pin en HIGH (nivel alto)
+          digitalWrite(buz,HIGH);
+          Serial.printf("Estoy en el encendido de la Alarma #7, %d:%d \n", rtc.hour, rtc.minute);
+        }
+      }else{
+        digitalWrite(led_rojo, LOW);                   // Apagar el LED estableciendo el pin en LOW (nivel bajo)
+        digitalWrite(buz, LOW);                        // Detener la señal de sonido
+        Serial.printf("Estoy en apagado automatico de la Alarma #7 hour > *%d*", rtc.hour);
+      }
+    }else{
+      Serial.println("*Alarma #7 desactivada* se realizo la interrupcion, AL7 = false\n");
+    }
+  
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  digitalWrite(led_verde, LOW);                     //Muestra el final de la interrupción
+
+  Serial.println(".");
+  delay(3000);
+}}
+
+
+void updateTime(){
+
+  rtc.DSread(); 
+  Serial.println(rtc.getTime());                //  (String) 00:00:03  (24h)
+  Serial.println(rtc.getDate(true));            //  (String) Monday, 14-March-2022
+  Serial.printf("Son las %d con %d\n", rtc.hour, rtc.minute); //  (int)     58    (0-59) | Hora 0     (0-23)
+  Serial.println("");
+} 
